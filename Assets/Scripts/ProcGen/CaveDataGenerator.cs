@@ -9,10 +9,13 @@ public class CaveDataGenerator : MonoBehaviour
     public enum BlockType { Air, Rock, Dirt, Ore, Slate, Door }
 
     [Header("Generation Settings")]
-    public int size = 50;              // X and Z grid size
-    public int depthLevels = 3;        // How many floors down we go
-    public int floorHeight = 5;        // 4 blocks for the drop + 1 for the floor itself
-    public int walkIterations = 500;   // How long the drunken walk lasts per floor
+    public int baseSize = 50;               // Grid size
+    int size;                               // Actual size based on current day
+    public int baseDepthLevels = 3;         // How many floors down we go
+    int depth;                              // Actual depth based on current day
+    public int floorHeight = 5;             // 4 blocks for the drop + 1 for the floor itself
+    int walkIterations;                     // How long the drunken walk lasts per floor
+    public float growthMultiplier = 1.5f;   // Tweak to make the late-game more or less extreme
 
     [Header("Block Prefabs")]
     public GameObject rockPrefab;
@@ -37,10 +40,24 @@ public class CaveDataGenerator : MonoBehaviour
     }
 
     public Vector3 GenerateLevel(int currentDay)
-    {
-        int totalHeight = depthLevels * floorHeight;
+    {   
+        // Exponential scaling: baseSize + ( (Day - 1)^2 * multiplier )
+        // Day 1 = baseSize. Day 2 = baseSize + 1^2 * multiplier. Day 3 = baseSize + 2^2 * multiplier, etc.
+        
+        size = baseSize + Mathf.RoundToInt(Mathf.Pow(GameManager.Instance.CurrentDay - 1, 2) * growthMultiplier);
+
+        // Adds 1 new floor every 3 days.
+        // Day 1-3 = baseDepth. Day 4-6 = baseDepth + 1. Day 7-9 = baseDepth + 2, etc.
+        depth = baseDepthLevels + ((GameManager.Instance.CurrentDay - 1) / 3);
+
+        // A density of 0.2f means 20% of the solid rock per floor gets carved into playable halls.
+        // Day 1 = 500 iterations per floor. Day 2 = 625. Day 3 = 900, etc.
+        float caveDensity = 0.2f; 
+        walkIterations = Mathf.RoundToInt((size * size) * caveDensity);
+
+        int totalHeight = depth * floorHeight;
         grid = new BlockType[size, totalHeight, size];
-        levelCenters = new Vector2[depthLevels]; 
+        levelCenters = new Vector2[depth]; 
 
         // 1. Initialize the World
         for (int x = 0; x < size; x++)
@@ -51,12 +68,12 @@ public class CaveDataGenerator : MonoBehaviour
         // 2 & 3. The Drunken Walk & Stairs
         Vector3Int currentPos = new Vector3Int(size / 2, totalHeight - 2, size / 2); 
         
-        for (int level = 0; level < depthLevels; level++)
+        for (int level = 0; level < depth; level++)
         {
             levelCenters[level] = new Vector2(currentPos.x, currentPos.z);
             currentPos = RunDrunkenWalk(currentPos, walkIterations);
             
-            if (level < depthLevels - 1)
+            if (level < depth - 1)
                 currentPos = CarveShaft(currentPos, floorHeight);
         }
 
@@ -144,7 +161,7 @@ public class CaveDataGenerator : MonoBehaviour
                     {
                         // Figure out which floor we are currently on to get the right center
                         int floorIndex = (totalHeight - 1 - y) / floorHeight;
-                        floorIndex = Mathf.Clamp(floorIndex, 0, depthLevels - 1);
+                        floorIndex = Mathf.Clamp(floorIndex, 0, depth - 1);
                         Vector2 currentCenter = levelCenters[floorIndex];
 
                         float distFromCenter = Vector2.Distance(new Vector2(x, z), currentCenter);
@@ -235,6 +252,9 @@ public class CaveDataGenerator : MonoBehaviour
                     }
                     // Notice we don't cull Rock, Dirt, or Ore at all. 
                     // Since the walls are only 2 blocks deep, we just spawn all of em
+
+                    // We need to cull faces that aren't shown to the camera but I think Unity can do that on its own,
+                    // will look into it down the line if performance starts to tank
 
                     // -- SPAWNING LOGIC --
 

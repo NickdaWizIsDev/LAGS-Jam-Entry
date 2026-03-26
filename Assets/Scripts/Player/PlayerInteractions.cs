@@ -22,7 +22,6 @@ namespace Player
         {
             breakAction.action.Enable();
             breakAction.action.started += OnBreak;
-            breakAction.action.performed += OnBreak;
             breakAction.action.canceled += OnBreak;
 
             interactAction.action.Enable();
@@ -33,7 +32,6 @@ namespace Player
         {
             breakAction.action.Disable();
             breakAction.action.started -= OnBreak;
-            breakAction.action.performed -= OnBreak;
             breakAction.action.canceled -= OnBreak;
 
             interactAction.action.Disable();
@@ -49,10 +47,14 @@ namespace Player
                 // If we've just switched targets, abort the hover on the old one and set it up on the current one
                 if (currentTarget != null && currentTarget != target) currentTarget.AbortHover();
                 currentTarget = target; 
-                UIManager.Instance.interactionText.text = target.OnHover();
+                UIManager.Instance.interactionHUD.text = target.OnHover();
 
-                if (isHoldingBreak)
+                if (isHoldingBreak && currentTarget is Block block)
                 {
+                    if (controller.pickaxePower < block.blockData.blockQuality)
+                    {
+                        return;
+                    }
                     currentTarget.Interact();
                 }
             }
@@ -60,7 +62,7 @@ namespace Player
             {
                 currentTarget.AbortHover();
                 currentTarget = null; 
-                UIManager.Instance.interactionText.text = ""; 
+                UIManager.Instance.interactionHUD.text = ""; 
             }
         }
 
@@ -79,8 +81,6 @@ namespace Player
                 {
                     case InputActionPhase.Started:
                         currentTarget.Interact();
-                        break;
-                    case InputActionPhase.Performed:
                         break;
                     case InputActionPhase.Canceled:
                         currentTarget.OnRelease();

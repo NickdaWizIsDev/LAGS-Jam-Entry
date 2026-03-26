@@ -21,33 +21,21 @@ namespace Player
 
         [Header("Player Stats")]
         [SerializeField] public float maxResistance = 100f;
-        private float currentResistance;
+        public float currentResistance;
         [SerializeField] public int pickaxePower = 1;
 
         private Transform cam;
 
         #region Action setup
-        void OnEnable() 
-        { 
-            // Enable the move action and subscribe to its events
-            moveAction.action.Enable(); 
-            moveAction.action.performed += OnMove;
-            moveAction.action.canceled += OnMove;
-        
-            // Now, do the same for the look action
+        void OnEnable()
+        {
+            moveAction.action.Enable();
             lookAction.action.Enable();
-            lookAction.action.performed += OnLook;
-            lookAction.action.canceled += OnLook;
         }
-        void OnDisable() 
-        { 
-            moveAction.action.Disable(); 
-            moveAction.action.performed -= OnMove;
-            moveAction.action.canceled -= OnMove;
-        
+        void OnDisable()
+        {
+            moveAction.action.Disable();
             lookAction.action.Disable();
-            lookAction.action.performed -= OnLook;
-            lookAction.action.canceled -= OnLook;
         }
         #endregion
 
@@ -62,25 +50,26 @@ namespace Player
         }
         private void Update()
         {
-        
+            movementInput = moveAction.action.ReadValue<Vector2>();
+            lookInput = lookAction.action.ReadValue<Vector2>();
+            currentResistance -= Time.deltaTime; // Resistance drains over time, because we're deep underground and it's hard to breathe and all that jazz
         }
         private void FixedUpdate()
         {
-            HandleBodyRotation();
-
             // Calculate movement direction based on player orientation
-            Vector3 moveDirection = (transform.forward * movementInput.y + transform.right * movementInput.x);
+            Vector3 moveDirection = transform.forward * movementInput.y + transform.right * movementInput.x;
 
             // Then, move
             body.linearVelocity = new Vector3(moveDirection.x * moveSpeed, body.linearVelocity.y, moveDirection.z * moveSpeed);
         }
         private void LateUpdate()
         {
+            if(GameManager.Instance.IsGamePaused) return; // Don't let the player look around if the game is paused
             HandleCameraPitch();
+            HandleBodyRotation();
         }
 
         #region  Input Handling
-        public void OnMove(InputAction.CallbackContext context) => movementInput = context.ReadValue<Vector2>();
         public void OnLook(InputAction.CallbackContext context) => lookInput = context.ReadValue<Vector2>();
         #endregion
     
@@ -89,8 +78,8 @@ namespace Player
         {
             if (lookInput.x == 0) return;
             
-            Quaternion delta = Quaternion.Euler(0f, lookInput.x * sensitivity, 0f);
-            body.MoveRotation(body.rotation * delta);
+            // Rotate the player's transform directly around the Y axis
+            transform.Rotate(Vector3.up * (lookInput.x * sensitivity));
         }
         private void HandleCameraPitch()
         {

@@ -1,19 +1,19 @@
 using UnityEngine;
 using UnityEditor;
 
-[CustomEditor(typeof(CaveDataGenerator))]
-public class CaveDataGeneratorEditor : Editor
+[CustomEditor(typeof(GameManager))]
+public class GameManagerEditor : Editor
 {
     public override void OnInspectorGUI()
     {
         DrawDefaultInspector();
 
-        CaveDataGenerator generator = (CaveDataGenerator)target;
+        GameManager generator = (GameManager)target;
 
         GUILayout.Space(10);
-        if (GUILayout.Button("Generate Level"))
+        if (GUILayout.Button("Start Day 1"))
         {
-            generator.GenerateLevel(1); // Default to day 1, or you can add a field for currentDay
+            generator.StartManually();
         }
     }
 }

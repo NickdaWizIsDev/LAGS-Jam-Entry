@@ -52,17 +52,18 @@ public class GameManager : MonoBehaviour
             // Disabling this for debugging, the lobby loads you immediately to the mines for some reason
             StartCoroutine(PreloadMinesAsync());
         }
+
+        CheckCursorState();
     }
     private void Start()
     {
         SceneManager.sceneLoaded += OnSceneLoaded;
-        CalculateNextQuota(); // Set the Day 1 quota immediately
+        CalculateNextQuota(); // Set the Day 1 quota immediately        
+        
+        CheckCursorState();
     }
     private void Update()
     {
-        bool inMines = SceneManager.GetActiveScene().name == "Mines";
-        Cursor.lockState = (IsGamePaused || !inMines) ? CursorLockMode.None : CursorLockMode.Locked;
-        Cursor.visible = IsGamePaused || !inMines;
     }
 
     private void OnDisable()
@@ -126,13 +127,25 @@ public class GameManager : MonoBehaviour
 
     public void TogglePause()
     {
-        if(SceneManager.GetActiveScene().name != "Mines") { return; } // Don't allow pausing in the lobby or main menu, why the hell would you do that
+        if(SceneManager.GetActiveScene().name != "Mines") { return; } // Don't allow pausing in the lobby or main menu, why the hell would you do that, idiot, stupid
         IsGamePaused = !IsGamePaused;
         Time.timeScale = IsGamePaused ? 0f : 1f;
+
+        CheckCursorState();
+    }
+    public void StartManually()
+    {
+        StartNextDay();
+    }
+    private void CheckCursorState()
+    {        
+        bool inMines = SceneManager.GetActiveScene().name == "Mines";
+        Cursor.lockState = (IsGamePaused || !inMines) ? CursorLockMode.None : CursorLockMode.Locked;
+        Cursor.visible = IsGamePaused || !inMines;        
     }
 
 #region Reference setups
     public void SetPlayer(PlayerController playerController) { Player = playerController; }
     public void SetGenerator(CaveDataGenerator caveDataGenerator) { Generator = caveDataGenerator; }
-#endregion
+    #endregion
 }
