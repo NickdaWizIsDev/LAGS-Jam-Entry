@@ -49,6 +49,7 @@ public class Block : Interactable
         yield return new WaitForSeconds(blockData.timeToBreak);
         Debug.Log("Block broken!");
         Destroy(gameObject);
+        GameManager.Instance.Player.AddMoney(blockData.coinValue);
         breaking = false;
     }
 }

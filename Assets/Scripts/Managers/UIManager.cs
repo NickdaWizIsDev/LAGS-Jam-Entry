@@ -37,7 +37,7 @@ namespace Player
         {
             pauseUI.gameObject.SetActive(GameManager.Instance.IsGamePaused);
 
-            quotaAndDayInfo .text = $"Day {GameManager.Instance.CurrentDay}\nQuota: {GameManager.Instance.CurrentQuota}";
+            quotaAndDayInfo.text = $"Day {GameManager.Instance.CurrentDay}\nQuota: {GameManager.Instance.CurrentQuota}\nHolding: {GameManager.Instance.Player.Inventory.money}";
             resistanceMeter.fillAmount = GameManager.Instance.Player.currentResistance / GameManager.Instance.Player.maxResistance;
         }
     }

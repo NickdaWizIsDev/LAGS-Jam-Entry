@@ -15,7 +15,15 @@ public class GameManager : MonoBehaviour
     [SerializeField] private int _currentDay = 1;
     public int CurrentDay { get => _currentDay; private set => _currentDay = value; }
     [SerializeField] private int _currentQuota;
+    public int LastQuota { get; private set; }
     public int CurrentQuota { get => _currentQuota; private set => _currentQuota = value; }
+    int basePlayerResistance = 180;
+    public int playerResistance;
+    int basePlayerPickaxeQuality = 1;
+    public int playerPickaxeQuality;
+    float basePlayerMovementSpeed = 3;
+    public float playerMovementSpeed;
+    public PlayerUpgrades unlockedUpgrades;
     public bool IsGamePaused { get; internal set; }
     public InputActionReference pauseAction;
 
@@ -48,8 +56,6 @@ public class GameManager : MonoBehaviour
         else if (scene.name == "Lobby")
         {
             // As soon as the Lobby loads, start silently loading the Mines in the background, we're cool like that
-
-            // Disabling this for debugging, the lobby loads you immediately to the mines for some reason
             StartCoroutine(PreloadMinesAsync());
         }
 
@@ -57,13 +63,19 @@ public class GameManager : MonoBehaviour
     }
     private void Start()
     {
+        // Only gets called on the very very first load of the script, i.e the Main Menu
         SceneManager.sceneLoaded += OnSceneLoaded;
+
+        ResetUpgrades();
+        playerResistance = basePlayerResistance;
+        playerPickaxeQuality = basePlayerPickaxeQuality;
+        playerMovementSpeed = basePlayerMovementSpeed;
         CalculateNextQuota(); // Set the Day 1 quota immediately        
-        
         CheckCursorState();
     }
     private void Update()
     {
+        
     }
 
     private void OnDisable()
@@ -89,9 +101,10 @@ public class GameManager : MonoBehaviour
 
     private void CalculateNextQuota()
     {
+        LastQuota = CurrentQuota;
         // Very slight exponential scaling to punish the "Jack of all trades" playstyle and encourage specialization, 
         // but mostly just to make sure the game gets harder as you progress.
-        int baseQuota = 250;
+        int baseQuota = 125;
         float difficultyMultiplier = Mathf.Pow(CurrentDay, 1.2f);
         var randomVariance = UnityEngine.Random.Range(0.8f, 1.4f); // Add some randomness to the quota so it's not the same every time
         CurrentQuota = Mathf.RoundToInt(baseQuota * difficultyMultiplier * randomVariance);
@@ -142,6 +155,10 @@ public class GameManager : MonoBehaviour
         bool inMines = SceneManager.GetActiveScene().name == "Mines";
         Cursor.lockState = (IsGamePaused || !inMines) ? CursorLockMode.None : CursorLockMode.Locked;
         Cursor.visible = IsGamePaused || !inMines;        
+    }
+    private void ResetUpgrades()
+    {
+        unlockedUpgrades.ResetAllUpgrades();
     }
 
 #region Reference setups

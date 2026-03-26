@@ -1088,6 +1088,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _currentDay: 1
   _currentQuota: 0
+  playerResistance: 0
+  playerPickaxeQuality: 0
+  playerMovementSpeed: 0
+  unlockedUpgrades: {fileID: 11400000, guid: 668a8553ea120af418c6f5c53a59c0b4, type: 2}
   pauseAction: {fileID: -6242860747241743802, guid: 271d4497c3fa3684fa95fde65c27f25c, type: 3}
 --- !u!1 &2139039205
 GameObject:

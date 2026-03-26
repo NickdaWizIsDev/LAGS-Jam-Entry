@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -8,6 +9,7 @@ namespace Player
         [Header("References")]
         [SerializeField] private Rigidbody body;
         [SerializeField] private PlayerInteractions interactions;
+        public PlayerInventory Inventory;
         [Header("Actions")]
         [SerializeField] private InputActionReference moveAction;
         private Vector2 movementInput;
@@ -43,6 +45,7 @@ namespace Player
         {
             GameManager.Instance.SetPlayer(this);
             interactions.controller = this;
+            Inventory = new PlayerInventory();
         }
         private void Start()
         {
@@ -92,6 +95,16 @@ namespace Player
             body.useGravity = true;
             body.position = playerPos;
         }
+
+        internal void AddMoney(int coinValue)
+        {
+            Inventory.money += coinValue;
+        }
         #endregion
+    }
+
+    public class PlayerInventory
+    {
+        public int money;
     }
 }
