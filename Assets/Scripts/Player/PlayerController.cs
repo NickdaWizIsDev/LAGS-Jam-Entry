@@ -1,53 +1,102 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class PlayerController : MonoBehaviour
+namespace Player
 {
-    [SerializeField] private Rigidbody rb;
-    [SerializeField] private InputActionReference moveAction;
-    private Vector2 movementInput;
-
-    public float moveSpeed = 5f;
-
-    void OnEnable() 
-    { 
-        moveAction.action.Enable(); 
-        moveAction.action.performed += OnMove;
-        moveAction.action.canceled += OnMove;
-    }
-    void OnDisable() 
-    { 
-        moveAction.action.Disable(); 
-        moveAction.action.performed -= OnMove;
-        moveAction.action.canceled -= OnMove;
-    }
-
-    private void Start()
+    public class PlayerController : MonoBehaviour
     {
-        GameManager.Instance.SetPlayer(this);
-        rb.useGravity = false; // Disable gravity for now
-    }
+        [Header("References")]
+        [SerializeField] private Rigidbody body;
+        [Header("Actions")]
+        [SerializeField] private InputActionReference moveAction;
+        private Vector2 movementInput;
+        [SerializeField] private InputActionReference lookAction;
+        private Vector2 lookInput;
 
-    private void Update()
-    {
+        [Header("Player Settings")] 
+        [SerializeField] private float sensitivity = 0.5f;
+        [SerializeField] private float moveSpeed = 5f;
+        private float xRotation;
+
+        private Transform cam;
+
+        #region Action setup
+        void OnEnable() 
+        { 
+            // Enable the move action and subscribe to its events
+            moveAction.action.Enable(); 
+            moveAction.action.performed += OnMove;
+            moveAction.action.canceled += OnMove;
         
-    }
+            // Now, do the same for the look action
+            lookAction.action.Enable();
+            lookAction.action.performed += OnLook;
+            lookAction.action.canceled += OnLook;
+        }
+        void OnDisable() 
+        { 
+            moveAction.action.Disable(); 
+            moveAction.action.performed -= OnMove;
+            moveAction.action.canceled -= OnMove;
+        
+            lookAction.action.Disable();
+            lookAction.action.performed -= OnLook;
+            lookAction.action.canceled -= OnLook;
+        }
+        #endregion
 
-    private void FixedUpdate()
-    {
-        // Move the player based on input
-        rb.linearVelocity = new Vector3(movementInput.x, rb.linearVelocity.y, movementInput.y) * moveSpeed;
-    }
+        private void Start()
+        {
+            GameManager.Instance.SetPlayer(this);
+            cam = Camera.main?.transform;
+            body.useGravity = false; // Disable gravity for now
+        }
 
-    public void OnMove(InputAction.CallbackContext context)
-    {
-        movementInput = context.ReadValue<Vector2>();
-    }
+        private void Update()
+        {
+        
+        }
 
+        private void FixedUpdate()
+        {
+            HandleBodyRotation();
+
+            // Calculate movement direction based on player orientation
+            Vector3 moveDirection = (transform.forward * movementInput.y + transform.right * movementInput.x);
+
+            // Then, move
+            body.linearVelocity = new Vector3(moveDirection.x * moveSpeed, body.linearVelocity.y, moveDirection.z * moveSpeed);
+        }
+
+        private void LateUpdate()
+        {
+            HandleCameraPitch();
+        }
+
+        #region  Input Handling
+        public void OnMove(InputAction.CallbackContext context) => movementInput = context.ReadValue<Vector2>();
+        public void OnLook(InputAction.CallbackContext context) => lookInput = context.ReadValue<Vector2>();
+        #endregion
     
-
-    public void ActivateGravity()
-    {
-        rb.useGravity = true;
+        #region Helper Functions
+        private void HandleBodyRotation()
+        {
+            if (lookInput.x == 0) return;
+            
+            Quaternion delta = Quaternion.Euler(0f, lookInput.x * sensitivity, 0f);
+            body.MoveRotation(body.rotation * delta);
+        }
+        private void HandleCameraPitch()
+        {
+            xRotation -= lookInput.y * sensitivity;
+            xRotation = Mathf.Clamp(xRotation, -80f, 80f);
+            cam.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+        }
+        public void SetEntrancePosition(Vector3 playerPos)
+        {
+            body.position = playerPos;
+            body.useGravity = true;
+        }
+        #endregion
     }
 }

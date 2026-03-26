@@ -1,5 +1,7 @@
+using System;
 using NUnit.Framework;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class CaveDataGenerator : MonoBehaviour
 {
@@ -32,7 +34,12 @@ public class CaveDataGenerator : MonoBehaviour
     // Reference to the player for teleporting them to the entrance
     private Transform playerTransform => GameManager.Instance.Player.transform;
 
-    public void GenerateLevel(int currentDay)
+    private void Start()
+    {
+        GameManager.Instance.SetGenerator(this);
+    }
+
+    public Vector3 GenerateLevel(int currentDay)
     {
         int totalHeight = depthLevels * floorHeight;
         grid = new BlockType[size, totalHeight, size];
@@ -68,13 +75,14 @@ public class CaveDataGenerator : MonoBehaviour
         // 7. Force the absolute outer edges to be Bedrock to fix the void bug
         ForceOuterShell();
 
-        // 8. Carve the starting room, set the door, and move the player
-        CreateEntrance();
+        // 8. Carve the starting room, set the door, and set the player's position
+        var playerPos = CreateEntrance();
         
         // 9. Spawn the GameObjects
         SpawnBlocks();
-        
-        Debug.Log($"Day {currentDay} Data Generated! Player spawned at Entrance.");
+
+        Debug.Log($"Day {currentDay} Data Generated!");
+        return playerPos;
     }
 
     private Vector3Int RunDrunkenWalk(Vector3Int startPos, int iterations)
@@ -272,7 +280,7 @@ public class CaveDataGenerator : MonoBehaviour
         Debug.Log("Prefabs successfully spawned!");
     }
 
-    private void CreateEntrance()
+    private Vector3 CreateEntrance()
     {
         int totalHeight = grid.GetLength(1);
         
@@ -305,13 +313,7 @@ public class CaveDataGenerator : MonoBehaviour
             grid[startX, startY, startZ - 3] = BlockType.Slate;
         }
 
-        // 3. Teleport the Player slightly above the floor so they drop in safely
-        if (playerTransform != null)
-        {
-            // startY - 1 puts them in the middle of the 3-block high tunnel
-            playerTransform.position = new Vector3(startX, startY - 1f, startZ);
-            GameManager.Instance.Player.ActivateGravity(); // Activate gravity once the player is in position
-        }
+        return new Vector3(startX, startY - 1f, startZ);
     }
 
     // --- Helper Functions ---
