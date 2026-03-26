@@ -662,5 +662,4 @@ MonoBehaviour:
       m_Calls: []
   canInteract: 1
   hoverText: 
-  blockType: 2
-  timeToBreak: 1
+  blockData: {fileID: 11400000, guid: b130fd94f0a95b242af203b35eb389ea, type: 2}

@@ -1,5 +1,6 @@
 using System;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -29,6 +30,11 @@ namespace Player
                 return;
             }
             Instance = this;
+        }
+
+        private void Update()
+        {
+            pauseUI.gameObject.SetActive(GameManager.Instance.IsGamePaused);
         }
     }
 }

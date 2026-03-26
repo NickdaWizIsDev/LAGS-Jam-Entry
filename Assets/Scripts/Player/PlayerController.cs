@@ -7,16 +7,22 @@ namespace Player
     {
         [Header("References")]
         [SerializeField] private Rigidbody body;
+        [SerializeField] private PlayerInteractions interactions;
         [Header("Actions")]
         [SerializeField] private InputActionReference moveAction;
         private Vector2 movementInput;
+
+        [Header("Look Settings")] 
+        [SerializeField] private float sensitivity = 0.5f;
         [SerializeField] private InputActionReference lookAction;
         private Vector2 lookInput;
-
-        [Header("Player Settings")] 
-        [SerializeField] private float sensitivity = 0.5f;
         [SerializeField] private float moveSpeed = 5f;
         private float xRotation;
+
+        [Header("Player Stats")]
+        [SerializeField] public float maxResistance = 100f;
+        private float currentResistance;
+        [SerializeField] public int pickaxePower = 1;
 
         private Transform cam;
 
@@ -45,18 +51,19 @@ namespace Player
         }
         #endregion
 
-        private void Start()
+        private void Awake()
         {
             GameManager.Instance.SetPlayer(this);
-            cam = Camera.main?.transform;
-            body.useGravity = false; // Disable gravity for now
+            interactions.controller = this;
         }
-
+        private void Start()
+        {
+            cam = Camera.main?.transform;
+        }
         private void Update()
         {
         
         }
-
         private void FixedUpdate()
         {
             HandleBodyRotation();
@@ -67,7 +74,6 @@ namespace Player
             // Then, move
             body.linearVelocity = new Vector3(moveDirection.x * moveSpeed, body.linearVelocity.y, moveDirection.z * moveSpeed);
         }
-
         private void LateUpdate()
         {
             HandleCameraPitch();
@@ -94,8 +100,8 @@ namespace Player
         }
         public void SetEntrancePosition(Vector3 playerPos)
         {
-            body.position = playerPos;
             body.useGravity = true;
+            body.position = playerPos;
         }
         #endregion
     }

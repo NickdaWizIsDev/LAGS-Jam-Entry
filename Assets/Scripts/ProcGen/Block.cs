@@ -4,9 +4,7 @@ using UnityEngine;
 
 public class Block : Interactable
 {
-    public enum BlockType { Air, Rock, Dirt, Ore, Slate, Door }
-    public BlockType blockType;
-    public float timeToBreak;
+    public BlockData blockData;
     private bool breaking;
     void Start()
     {
@@ -15,12 +13,12 @@ public class Block : Interactable
     public override string OnHover()
     {
         _outline.enabled = true;
-        return "" + blockType;
+        return "" + blockData.blockName + hoverText + "\nQuality: " + blockData.blockQuality;
     }
 
     public override void Interact()
     {
-        if(blockType == BlockType.Slate) return;
+        if(blockData.blockType == BlockData.BlockType.Slate) return;
         Debug.Log("Breaking this block...");
         StartCoroutine(BreakBlock());
     }
@@ -29,14 +27,14 @@ public class Block : Interactable
     {
         StopAllCoroutines();
         breaking = false;
-        // And reset the texture/shader value that indicates breakage to the base
+        // And reset the texture/shader value that indicates breakage to the base, whatever we end up cooking
     }
 
     private IEnumerator BreakBlock()
     {
         if (breaking) yield break;
         breaking = true;
-        yield return new WaitForSeconds(timeToBreak); // Make you hold down to break the block
+        yield return new WaitForSeconds(blockData.timeToBreak); // Make you hold down to break the block (if you release before the time is up, the coroutine is cancelled)
         Debug.Log("Block broken!");
         Destroy(gameObject);
         breaking = false;

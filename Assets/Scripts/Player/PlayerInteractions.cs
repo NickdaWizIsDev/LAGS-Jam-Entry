@@ -12,23 +12,32 @@ namespace Player
         public LayerMask interactionLayer;
         public Interactable currentTarget;
         public float raycastDistance = 4f;
+        public InputActionReference breakAction;
         public InputActionReference interactAction;
+        private bool isHoldingBreak;
+        internal PlayerController controller;
 
         #region Action setup
         private void OnEnable()
         {
+            breakAction.action.Enable();
+            breakAction.action.started += OnBreak;
+            breakAction.action.performed += OnBreak;
+            breakAction.action.canceled += OnBreak;
+
             interactAction.action.Enable();
             interactAction.action.started += OnInteract;
-            interactAction.action.performed += OnInteract;
-            interactAction.action.canceled += OnInteract;
         }
 
         private void OnDisable()
         {
+            breakAction.action.Disable();
+            breakAction.action.started -= OnBreak;
+            breakAction.action.performed -= OnBreak;
+            breakAction.action.canceled -= OnBreak;
+
             interactAction.action.Disable();
             interactAction.action.started -= OnInteract;
-            interactAction.action.performed -= OnInteract;
-            interactAction.action.canceled -= OnInteract;
         }
         #endregion
 
@@ -41,6 +50,11 @@ namespace Player
                 if (currentTarget != null && currentTarget != target) currentTarget.AbortHover();
                 currentTarget = target; 
                 UIManager.Instance.interactionText.text = target.OnHover();
+
+                if (isHoldingBreak)
+                {
+                    currentTarget.Interact();
+                }
             }
             else if (currentTarget != null)
             {
@@ -50,10 +64,18 @@ namespace Player
             }
         }
 
-        public void OnInteract(InputAction.CallbackContext context)
+        private void OnBreak(InputAction.CallbackContext context)
         {
+            if(context.started) isHoldingBreak = true;
+            if(context.canceled) isHoldingBreak = false;
             if(GameManager.Instance.IsGamePaused || !canInteract || currentTarget == null || !currentTarget.canInteract) { return; }
-            switch (context.phase)
+            if (currentTarget is Block block)
+            {
+                if (controller.pickaxePower < block.blockData.blockQuality)
+                {
+                    return;
+                }
+                switch (context.phase)
                 {
                     case InputActionPhase.Started:
                         currentTarget.Interact();
@@ -64,6 +86,15 @@ namespace Player
                         currentTarget.OnRelease();
                         break;
                 }
+            }
+        }
+        private void OnInteract(InputAction.CallbackContext context)
+        {
+            if(GameManager.Instance.IsGamePaused || !canInteract || currentTarget == null || !currentTarget.canInteract) { return; }
+            if (context.phase == InputActionPhase.Started)
+            {
+                currentTarget.Interact();
+            }
         }
     }
 }

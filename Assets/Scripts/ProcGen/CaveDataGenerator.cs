@@ -31,10 +31,7 @@ public class CaveDataGenerator : MonoBehaviour
     // The center of each level
     private Vector2[] levelCenters;
 
-    // Reference to the player for teleporting them to the entrance
-    private Transform playerTransform => GameManager.Instance.Player.transform;
-
-    private void Start()
+    private void Awake()
     {
         GameManager.Instance.SetGenerator(this);
     }
@@ -313,7 +310,7 @@ public class CaveDataGenerator : MonoBehaviour
             grid[startX, startY, startZ - 3] = BlockType.Slate;
         }
 
-        return new Vector3(startX, startY - 1f, startZ);
+        return new Vector3(startX, startY - 3f, startZ);
     }
 
     // --- Helper Functions ---

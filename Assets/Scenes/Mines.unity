@@ -1027,7 +1027,7 @@ Rigidbody:
     m_Bits: 0
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
-  m_UseGravity: 0
+  m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 112
@@ -1045,10 +1045,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   body: {fileID: 1031430256}
+  interactions: {fileID: 1031430259}
   moveAction: {fileID: -1680190386980627800, guid: 052faaac586de48259a63d0c4782560b, type: 3}
-  lookAction: {fileID: -5630151704836100654, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   sensitivity: 0.5
+  lookAction: {fileID: -5630151704836100654, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   moveSpeed: 2
+  maxResistance: 100
+  pickaxePower: 1
 --- !u!4 &1031430258
 Transform:
   m_ObjectHideFlags: 0
@@ -1084,7 +1087,8 @@ MonoBehaviour:
     m_Bits: 64
   currentTarget: {fileID: 0}
   raycastDistance: 2.5
-  interactAction: {fileID: 1120369429361536294, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  breakAction: {fileID: 1120369429361536294, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  interactAction: {fileID: -3190078762680701964, guid: 271d4497c3fa3684fa95fde65c27f25c, type: 3}
 --- !u!1 &1230154130
 GameObject:
   m_ObjectHideFlags: 0
@@ -1409,6 +1413,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1f96c88c9a482da4f8c9dc45bcdc930a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _currentDay: 1
+  _currentQuota: 0
+  pauseAction: {fileID: -6242860747241743802, guid: 271d4497c3fa3684fa95fde65c27f25c, type: 3}
 --- !u!4 &1691929053
 Transform:
   m_ObjectHideFlags: 0

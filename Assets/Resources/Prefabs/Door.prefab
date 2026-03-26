@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 2947282717820601931}
   - component: {fileID: 8398077212379649833}
   - component: {fileID: 3365039395891644069}
-  - component: {fileID: 4787053341762890234}
+  - component: {fileID: 2918093993610598171}
   m_Layer: 6
   m_Name: Door
   m_TagString: Untagged
@@ -104,7 +104,7 @@ SphereCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -645,7 +645,7 @@ MonoBehaviour:
     - {x: -0.6959634, y: 0.1768332, z: -0.6959634}
     - {x: -0.34139428, y: 0.6646524, z: -0.66459554}
     - {x: -0.17685792, y: 0.6958694, z: -0.6960511}
---- !u!114 &4787053341762890234
+--- !u!114 &2918093993610598171
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -654,7 +654,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 7627555606036811757}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3485421ccf758214798dc04f81560c8a, type: 3}
+  m_Script: {fileID: 11500000, guid: 3eb2772c441738e40892407bccf74680, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   onInteract:
