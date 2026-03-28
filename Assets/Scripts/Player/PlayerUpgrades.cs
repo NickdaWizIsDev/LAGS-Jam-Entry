@@ -5,7 +5,7 @@ using UnityEngine;
 public class PlayerUpgrades : ScriptableObject
 {
     public bool[] resistanceUpgrades = new bool[5];
-    public bool[] pickaxeUpgrades = new bool[5];
+    public bool[] pickaxeUpgrades = new bool[3];
     public bool[] speedUpgrades = new bool[5];
 
     public void ResetAllUpgrades()

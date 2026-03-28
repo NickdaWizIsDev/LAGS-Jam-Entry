@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: Player Upgrades
   m_EditorClassIdentifier: 
   resistanceUpgrades: 0000000000
-  pickaxeUpgrades: 0000000000
+  pickaxeUpgrades: 000000
   speedUpgrades: 0000000000
