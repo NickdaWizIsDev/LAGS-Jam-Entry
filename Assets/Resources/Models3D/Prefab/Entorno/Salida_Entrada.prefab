@@ -52,6 +52,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Salida_Entrada
       objectReference: {fileID: 0}
+    - target: {fileID: 5095572037580769879, guid: 8dc5a0445748b9446b827551727b864a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.026
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
     - {fileID: -4025019805030258104, guid: 8dc5a0445748b9446b827551727b864a, type: 3}

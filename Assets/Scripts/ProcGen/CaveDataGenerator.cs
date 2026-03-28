@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using NUnit.Framework;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -22,8 +23,9 @@ public class CaveDataGenerator : MonoBehaviour
     public GameObject dirtPrefab;
     public GameObject stygianSlatePrefab;
     public GameObject[] mineralPrefabs;
-    public GameObject stairPrefab;
-    public GameObject doorPrefab;
+    public GameObject ladderPrefab;
+    public GameObject exitLadderPrefab; // was doorPrefab
+    public GameObject elevatorPrefab;
 
     [Header("Organization")]
     public Transform environmentContainer; // Assign an empty GameObject here to keep your hierarchy clean
@@ -39,7 +41,7 @@ public class CaveDataGenerator : MonoBehaviour
         GameManager.Instance.SetGenerator(this);
     }
 
-    public Vector3 GenerateLevel(int currentDay)
+    public IEnumerator GenerateLevelAsync(int currentDay, Action<Vector3> onComplete, Action<float> onProgress)
     {   
         // Exponential scaling: baseSize + ( (Day - 1)^2 * multiplier )
         // Day 1 = baseSize. Day 2 = baseSize + 1^2 * multiplier. Day 3 = baseSize + 2^2 * multiplier, etc.
@@ -92,11 +94,13 @@ public class CaveDataGenerator : MonoBehaviour
         // 8. Carve the starting room, set the door, and set the player's position
         var playerPos = CreateEntrance();
         
-        // 9. Spawn the GameObjects
-        SpawnBlocks();
+        // 9. Spawn the GameObjects over a handful of frames
+        yield return StartCoroutine(SpawnBlocksAsync(onProgress));
 
         Debug.Log($"Day {currentDay} Data Generated!");
-        return playerPos;
+        
+        // 10. This is how we pass the position to the GameManager now, because actions => you can do stuff
+        onComplete?.Invoke(playerPos);
     }
 
     private Vector3Int RunDrunkenWalk(Vector3Int startPos, int iterations)
@@ -223,7 +227,7 @@ public class CaveDataGenerator : MonoBehaviour
         grid = nextGrid;
     }
 
-    public void SpawnBlocks()
+    private IEnumerator SpawnBlocksAsync(Action<float> onProgress)
     {
         // Destroy old blocks if we are generating a new day
         foreach (Transform child in environmentContainer)
@@ -232,6 +236,14 @@ public class CaveDataGenerator : MonoBehaviour
         }
 
         int totalHeight = grid.GetLength(1);
+        
+        // Change maxBlocks depending on performance feedback
+        int blocksSpawnedThisFrame = 0;
+        int maxBlocksPerFrame = 250; 
+        
+        // Calculate total possible blocks for our math
+        float totalBlocks = size * totalHeight * size;
+        float blocksProcessed = 0;
 
         for (int x = 0; x < size; x++)
         {
@@ -241,96 +253,85 @@ public class CaveDataGenerator : MonoBehaviour
                 {
                     BlockType currentType = grid[x, y, z];
 
-                    // -- CULLING LOGIC --
-                    // Don't spawn anything for Air
+                    // -- CULLING LOGIC -- (Keep your existing culling logic here)
                     if (currentType == BlockType.Air) continue;
-
-                    if (currentType == BlockType.Slate)
-                    {
-                        // If it ONLY touches other Slate, cull it to save performance
-                        if (!HasNonSlateNeighbor(x, y, z)) continue;
-                    }
-                    // Notice we don't cull Rock, Dirt, or Ore at all. 
-                    // Since the walls are only 2 blocks deep, we just spawn all of em
-
-                    // We need to cull faces that aren't shown to the camera but I think Unity can do that on its own,
-                    // will look into it down the line if performance starts to tank
-
-                    // -- SPAWNING LOGIC --
+                    if (currentType == BlockType.Slate && !HasNonSlateNeighbor(x, y, z)) continue;
 
                     GameObject prefabToSpawn = null;
-
-                    // Figure out which prefab to use
                     switch (currentType)
                     {
-                        case BlockType.Rock:
-                            prefabToSpawn = rockPrefab;
-                            break;
-                        case BlockType.Dirt:
-                            prefabToSpawn = dirtPrefab;
-                            break;
-                        case BlockType.Slate:
-                            prefabToSpawn = stygianSlatePrefab;
-                            break;
+                        case BlockType.Rock: prefabToSpawn = rockPrefab; break;
+                        case BlockType.Dirt: prefabToSpawn = dirtPrefab; break;
+                        case BlockType.Slate: prefabToSpawn = stygianSlatePrefab; break;
                         case BlockType.Door:
-                            prefabToSpawn = doorPrefab;
+                            // if I have the 4th resistance upgrade, get me the elevator, not that ugly old ladder
+                            if (GameManager.Instance.unlockedUpgrades.resistanceUpgrades[3])
+                            {
+                                prefabToSpawn = elevatorPrefab;
+                            }
+                            else
+                            {
+                                prefabToSpawn = exitLadderPrefab;
+                            }
                             break;
                         case BlockType.Ore:
                             if (mineralPrefabs.Length > 0)
-                            {
-                                int randomIndex = Random.Range(0, mineralPrefabs.Length);
-                                prefabToSpawn = mineralPrefabs[randomIndex];
-                            }
+                                prefabToSpawn = mineralPrefabs[Random.Range(0, mineralPrefabs.Length)];
                             break;
                     }
 
-                    // Spawn the block and parent it to the container
-                    if (prefabToSpawn != null)
+                    if (prefabToSpawn is not null)
                     {
-                        Vector3 spawnPosition = new Vector3(x, y, z);
-                        Instantiate(prefabToSpawn, spawnPosition, Quaternion.identity, environmentContainer);
+                        Instantiate(prefabToSpawn, new Vector3(x, y, z), Quaternion.identity, environmentContainer);
+                        blocksSpawnedThisFrame++;
+
+                        // THE MAGIC TRICK: If we hit our limit, wait until the next frame!
+                        if (blocksSpawnedThisFrame >= maxBlocksPerFrame)
+                        {
+                            blocksSpawnedThisFrame = 0;
+                            // Report the exact percentage (0.0 to 1.0) back to the UI!
+                            onProgress?.Invoke(blocksProcessed / totalBlocks);
+                            yield return null; 
+                        }
                     }
                 }
             }
         }
         
-        Debug.Log("Prefabs successfully spawned!");
+        onProgress?.Invoke(1f); // 100% complete
     }
 
     private Vector3 CreateEntrance()
     {
         int totalHeight = grid.GetLength(1);
-        
-        // The exact coordinate where Level 1's Drunken Walk started
         int startX = size / 2;
-        int startY = totalHeight - 2;
+        int startY = totalHeight - 2; 
         int startZ = size / 2;
 
-        // 1. Clear a 3x3 safe starting room so the player is never trapped
-        for (int x = startX - 1; x <= startX + 1; x++)
+        // Anchor the exact floor of the hallway so we don't dig a pit
+        int floorY = startY - 2;
+
+        // 1. Clear a massive 5x5 room for the elevator model
+        for (int x = startX - 2; x <= startX + 2; x++)
         {
-            // y-2 is the floor of the hallway, y is the ceiling
-            for (int y = startY - 2; y <= startY; y++) 
+            // Start at the floor, and clear 4 blocks UP for headroom
+            for (int y = floorY; y <= floorY + 4; y++) 
             {
-                for (int z = startZ - 1; z <= startZ + 1; z++)
+                for (int z = startZ - 2; z <= startZ + 2; z++)
                 {
                     if (IsInBounds(x, y, z)) grid[x, y, z] = BlockType.Air;
                 }
             }
         }
 
-        // 2. Place the Door block on the wall behind the player (z - 2)
-        if (IsInBounds(startX, startY - 2, startZ - 2))
+        // 2. Place the Door/Elevator block flush on the floor
+        if (IsInBounds(startX, floorY, startZ))
         {
-            grid[startX, startY - 2, startZ - 2] = BlockType.Door;
-            
-            // Back the door with Bedrock so there is no void behind it
-            grid[startX, startY - 2, startZ - 3] = BlockType.Slate;
-            grid[startX, startY - 1, startZ - 3] = BlockType.Slate;
-            grid[startX, startY, startZ - 3] = BlockType.Slate;
+            grid[startX, floorY, startZ] = BlockType.Door;
         }
 
-        return new Vector3(startX, startY - 3f, startZ);
+        // 3. Spawn the player slightly offset and just above the floor so they drop in safely
+        return new Vector3(startX, floorY + 1f, startZ+1.5f);
     }
 
     // --- Helper Functions ---
