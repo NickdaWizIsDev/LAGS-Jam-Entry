@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-namespace Player
+namespace Managers
 {
     public class UIManager : MonoBehaviour
     {
@@ -15,6 +15,10 @@ namespace Player
         public Image resistanceMeter;
         public TextMeshProUGUI interactionHUD;
         public TextMeshProUGUI quotaAndDayInfo;
+        public Image basicPickaxe;
+        public Image betterPickaxe;
+        public Material stoneMaterial, ironMaterial, goldMaterial, diamondMaterial;
+        public TextMeshProUGUI pickaxeLevelText;
 
         [Header("Pause Menu")]
         public Canvas pauseUI;
@@ -26,6 +30,9 @@ namespace Player
         [Header("Game Over Screen")]
         public CanvasGroup quotaNotMetScreen;
         public CanvasGroup missingInActionScreen;
+        public CanvasGroup day15WinScreen;
+
+        public bool gameOverScreenOn;
 
         void Awake()
         {            
@@ -46,6 +53,58 @@ namespace Player
             quotaNotMetScreen.gameObject.SetActive(false);
             missingInActionScreen.alpha = 0f;
             missingInActionScreen.gameObject.SetActive(false);
+        }
+
+        private void Start()
+        {
+            // Show the correct pickaxe
+            if (GameManager.Instance.unlockedUpgrades.betterPickaxeUpgrade)
+            {
+                basicPickaxe.enabled = false;
+                betterPickaxe.enabled = true;
+
+                switch (GameManager.Instance.Player.pickaxePower)
+                {
+                    case 1:
+                        betterPickaxe.material = stoneMaterial;
+                        break;
+                    case 2:
+                        betterPickaxe.material = ironMaterial;
+                        break;
+                    case 3:
+                        betterPickaxe.material = goldMaterial;
+                        break;
+                    case 4:
+                        betterPickaxe.material = diamondMaterial;
+                        break;
+                    default:
+                        betterPickaxe.material = betterPickaxe.material;
+                        break;
+                }
+            }
+            else
+            {
+                switch (GameManager.Instance.Player.pickaxePower)
+                {
+                    case 1:
+                        basicPickaxe.material = stoneMaterial;
+                        break;
+                    case 2:
+                        basicPickaxe.material = ironMaterial;
+                        break;
+                    case 3:
+                        basicPickaxe.material = goldMaterial;
+                        break;
+                    case 4:
+                        basicPickaxe.material = diamondMaterial;
+                        break;
+                    default:
+                        basicPickaxe.material = basicPickaxe.material;
+                        break;
+                }
+            }
+
+            pickaxeLevelText.text = GameManager.Instance.Player.pickaxePower.ToString();
         }
 
         private void Update()
@@ -74,12 +133,21 @@ namespace Player
         {
             missingInActionScreen.gameObject.SetActive(true);
             Tween.Alpha(missingInActionScreen,0f, 1f, duration: 2f, useUnscaledTime:true);
+            gameOverScreenOn = true;
         }
 
         public void TriggerFired()
         {
             quotaNotMetScreen.gameObject.SetActive(true);
             Tween.Alpha(quotaNotMetScreen,0f, 1f, duration: 2f, useUnscaledTime:true);
+            gameOverScreenOn = true;
+        }
+
+        public void TriggerDay15Win()
+        {
+            day15WinScreen.gameObject.SetActive(true);
+            Tween.Alpha(day15WinScreen,0f, 1f, duration: 2f, useUnscaledTime:true);
+            gameOverScreenOn = true;
         }
 
         public void RestartGame()

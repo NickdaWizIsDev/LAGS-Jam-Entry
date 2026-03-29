@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using UnityEngine;
+using Managers;
 
 public class Block : Interactable
 {
@@ -12,6 +13,10 @@ public class Block : Interactable
     }
     public override string OnHover()
     {
+        if(blockData.blockType == BlockData.BlockType.Slate)
+        {
+            return "" + blockData.blockName + "\nUnbreakable";
+        }
         _outline.enabled = true;
         return "" + blockData.blockName + hoverText + "\nQuality: " + blockData.blockQuality;
     }
@@ -45,8 +50,16 @@ public class Block : Interactable
         breaking = true;
         // This avoids the routine starting twice
 
+        float speedMultiplier = 1f + (GameManager.Instance.Player.pickaxePower * 0.15f);
+        if (GameManager.Instance.unlockedUpgrades.betterPickaxeUpgrade)
+        {
+            speedMultiplier *= 2f;
+        }
+        
+        float actualTimeToBreak = blockData.timeToBreak / speedMultiplier;
+
         // Wait for however long it takes to break this type of block
-        yield return new WaitForSeconds(blockData.timeToBreak);
+        yield return new WaitForSeconds(actualTimeToBreak);
         Debug.Log("Block broken!");
         Destroy(gameObject);
         GameManager.Instance.Player.AddMoney(blockData.coinValue);

@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEditor;
+using Managers;
 
 [CustomEditor(typeof(GameManager))]
 public class GameManagerEditor : Editor
