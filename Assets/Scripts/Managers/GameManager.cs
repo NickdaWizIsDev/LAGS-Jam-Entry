@@ -220,7 +220,7 @@ public class GameManager : MonoBehaviour
         CalculateNextQuota(); 
         ResetUpgrades();
         
-        SceneManager.LoadScene("Lobby");
+        SceneManager.LoadScene("Mines");
     }
     public void ReturnToMainMenu()
     {

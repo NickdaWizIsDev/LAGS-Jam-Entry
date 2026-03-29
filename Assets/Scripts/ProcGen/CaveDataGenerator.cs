@@ -7,7 +7,7 @@ using Random = UnityEngine.Random;
 public class CaveDataGenerator : MonoBehaviour
 {
     // The types of blocks in our game
-    public enum BlockType { Air, Rock, Dirt, Ore, Slate, Door }
+    public enum BlockType { Air, Rock, Dirt, Ore, Slate, Door, Ladder }
 
     [Header("Generation Settings")]
     public int baseSize = 50;               // Grid size
@@ -28,12 +28,9 @@ public class CaveDataGenerator : MonoBehaviour
     public GameObject elevatorPrefab;
 
     [Header("Organization")]
-    public Transform environmentContainer; // Assign an empty GameObject here to keep your hierarchy clean
+    public Transform environmentContainer; 
 
-    // The Master Grid holding all our block data
     public BlockType[,,] grid;
-
-    // The center of each level
     private Vector2[] levelCenters;
 
     private void Awake()
@@ -99,7 +96,6 @@ public class CaveDataGenerator : MonoBehaviour
 
         Debug.Log($"Day {currentDay} Data Generated!");
         
-        // 10. This is how we pass the position to the GameManager now, because actions => you can do stuff
         onComplete?.Invoke(playerPos);
     }
 
@@ -121,7 +117,6 @@ public class CaveDataGenerator : MonoBehaviour
             pos.x = Mathf.Clamp(pos.x, 2, size - 3);
             pos.z = Mathf.Clamp(pos.z, 2, size - 3);
 
-            // Track the furthest point to place the stairs
             float dist = Vector3.Distance(startPos, pos);
             if (dist > maxDist)
             {
@@ -130,7 +125,7 @@ public class CaveDataGenerator : MonoBehaviour
             }
         }
         
-        return furthestPos; // Return the end of the line
+        return furthestPos; 
     }
 
     private Vector3Int CarveShaft(Vector3Int topPos, int dropDistance)
@@ -138,17 +133,25 @@ public class CaveDataGenerator : MonoBehaviour
         Vector3Int current = topPos;
         for (int i = 0; i < dropDistance; i++)
         {
-            current.y -= 1; // Move down one block
+            current.y -= 1; 
             if (IsInBounds(current.x, current.y, current.z))
             {
-                grid[current.x, current.y, current.z] = BlockType.Air;
+                // ONLY place the ladder prefab at the very bottom of the drop!
+                if (i == dropDistance - 1)
+                {
+                    grid[current.x, current.y, current.z] = BlockType.Ladder;
+                }
+                else
+                {
+                    grid[current.x, current.y, current.z] = BlockType.Air; 
+                }
                 
-                // Widen the shaft by 1 block so the player can easily fall in
+                // Always widen the shaft by 1 block (+X) so the player has space to climb it
                 if (IsInBounds(current.x + 1, current.y, current.z)) 
                     grid[current.x + 1, current.y, current.z] = BlockType.Air;
             }
         }
-        return current; // Return the new starting position for the next floor
+        return current; 
     }
 
     private void SpawnOres(int currentDay)
@@ -163,7 +166,6 @@ public class CaveDataGenerator : MonoBehaviour
                 {
                     if (grid[x, y, z] == BlockType.Rock || grid[x, y, z] == BlockType.Dirt)
                     {
-                        // Figure out which floor we are currently on to get the right center
                         int floorIndex = (totalHeight - 1 - y) / floorHeight;
                         floorIndex = Mathf.Clamp(floorIndex, 0, depth - 1);
                         Vector2 currentCenter = levelCenters[floorIndex];
@@ -193,7 +195,8 @@ public class CaveDataGenerator : MonoBehaviour
             {
                 for (int z = 0; z < size; z++)
                 {
-                    if (grid[x, y, z] == BlockType.Air) continue;
+                    // Protect these blocks from being overwritten
+                    if (grid[x, y, z] == BlockType.Air || grid[x, y, z] == BlockType.Door || grid[x, y, z] == BlockType.Ladder) continue;
 
                     bool isNearAirHorizontal = false;
                     bool isFloorOrCeiling = false;
@@ -252,8 +255,9 @@ public class CaveDataGenerator : MonoBehaviour
                 for (int z = 0; z < size; z++)
                 {
                     BlockType currentType = grid[x, y, z];
+                    blocksProcessed++;
 
-                    // -- CULLING LOGIC -- (Keep your existing culling logic here)
+                    // -- CULLING LOGIC --
                     if (currentType == BlockType.Air) continue;
                     if (currentType == BlockType.Slate && !HasNonSlateNeighbor(x, y, z)) continue;
 
@@ -263,8 +267,8 @@ public class CaveDataGenerator : MonoBehaviour
                         case BlockType.Rock: prefabToSpawn = rockPrefab; break;
                         case BlockType.Dirt: prefabToSpawn = dirtPrefab; break;
                         case BlockType.Slate: prefabToSpawn = stygianSlatePrefab; break;
+                        case BlockType.Ladder: prefabToSpawn = ladderPrefab; break;
                         case BlockType.Door:
-                            // if I have the 4th resistance upgrade, get me the elevator, not that ugly old ladder
                             if (GameManager.Instance.unlockedUpgrades.resistanceUpgrades[3])
                             {
                                 prefabToSpawn = elevatorPrefab;
@@ -275,30 +279,45 @@ public class CaveDataGenerator : MonoBehaviour
                             }
                             break;
                         case BlockType.Ore:
-                            if (mineralPrefabs.Length > 0)
+                            if (mineralPrefabs.Length > 0) // Change this to be weighted for more basic ores
                                 prefabToSpawn = mineralPrefabs[Random.Range(0, mineralPrefabs.Length)];
                             break;
                     }
 
                     if (prefabToSpawn is not null)
                     {
-                        Instantiate(prefabToSpawn, new Vector3(x, y, z), Quaternion.identity, environmentContainer);
+                        Quaternion spawnRotation = Quaternion.identity;
+
+                        if (currentType == BlockType.Door)
+                        {
+                            if (!IsInBounds(x, y, z - 1) || grid[x, y, z - 1] != BlockType.Air) spawnRotation = Quaternion.Euler(0, 0, 0); 
+                            else if (!IsInBounds(x, y, z + 1) || grid[x, y, z + 1] != BlockType.Air) spawnRotation = Quaternion.Euler(0, 180, 0); 
+                            else if (!IsInBounds(x - 1, y, z) || grid[x - 1, y, z] != BlockType.Air) spawnRotation = Quaternion.Euler(0, 90, 0); 
+                            else if (!IsInBounds(x + 1, y, z) || grid[x + 1, y, z] != BlockType.Air) spawnRotation = Quaternion.Euler(0, -90, 0); 
+                        }
+                        else if (currentType == BlockType.Ladder)
+                        {
+                            // Rotates the ladder to face the air shaft we carved
+                            spawnRotation = Quaternion.Euler(0, 90, 0); 
+                        }
+
+                        Instantiate(prefabToSpawn, new Vector3(x, y, z), spawnRotation, environmentContainer);
+                        
                         blocksSpawnedThisFrame++;
 
-                        // THE MAGIC TRICK: If we hit our limit, wait until the next frame!
                         if (blocksSpawnedThisFrame >= maxBlocksPerFrame)
                         {
                             blocksSpawnedThisFrame = 0;
-                            // Report the exact percentage (0.0 to 1.0) back to the UI!
+                            // Report the exact percentage (0.0 to 1.0) back to the UI 
                             onProgress?.Invoke(blocksProcessed / totalBlocks);
-                            yield return null; 
+                            yield return null;
                         }
                     }
                 }
             }
         }
         
-        onProgress?.Invoke(1f); // 100% complete
+        onProgress?.Invoke(1f); 
     }
 
     private Vector3 CreateEntrance()
@@ -311,10 +330,9 @@ public class CaveDataGenerator : MonoBehaviour
         // Anchor the exact floor of the hallway so we don't dig a pit
         int floorY = startY - 2;
 
-        // 1. Clear a massive 5x5 room for the elevator model
+        // Clear a massive 5x5 room for the elevator model
         for (int x = startX - 2; x <= startX + 2; x++)
         {
-            // Start at the floor, and clear 4 blocks UP for headroom
             for (int y = floorY; y <= floorY + 4; y++) 
             {
                 for (int z = startZ - 2; z <= startZ + 2; z++)
@@ -324,13 +342,11 @@ public class CaveDataGenerator : MonoBehaviour
             }
         }
 
-        // 2. Place the Door/Elevator block flush on the floor
         if (IsInBounds(startX, floorY, startZ))
         {
             grid[startX, floorY, startZ] = BlockType.Door;
         }
 
-        // 3. Spawn the player slightly offset and just above the floor so they drop in safely
         return new Vector3(startX, floorY + 1f, startZ+1.5f);
     }
 
@@ -402,7 +418,6 @@ public class CaveDataGenerator : MonoBehaviour
                             int dirtNeighbors = GetNeighborCount(x, y, z, BlockType.Dirt);
                             int rockNeighbors = GetNeighborCount(x, y, z, BlockType.Rock);
 
-                            // CA Rule: Majority rules
                             if (dirtNeighbors > rockNeighbors)
                                 nextGrid[x, y, z] = BlockType.Dirt;
                             else if (rockNeighbors > dirtNeighbors)
@@ -411,7 +426,7 @@ public class CaveDataGenerator : MonoBehaviour
                     }
                 }
             }
-            grid = nextGrid; // Apply the smoothed grid
+            grid = nextGrid; 
         }
     }
 

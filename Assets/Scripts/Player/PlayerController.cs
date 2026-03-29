@@ -10,6 +10,9 @@ namespace Player
         [Header("References")]
         [SerializeField] private Rigidbody body;
         [SerializeField] private PlayerInteractions interactions;
+        [SerializeField] private Transform playerHead;
+        [SerializeField] private GameObject basicPickaxe;
+        [SerializeField] private GameObject betterPickaxe;
         public PlayerInventory Inventory;
         
         [Header("Actions")]

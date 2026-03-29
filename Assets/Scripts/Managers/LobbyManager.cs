@@ -10,6 +10,7 @@ public class LobbyManager : MonoBehaviour
     public TextMeshProUGUI statsText;
     public Button nextDayButton;
     public Button[] resistanceUpgrades, pickaxeUpgrades, speedUpgrades;
+    public Button helmetUpgrade, betterPickaxeUpgrade, promotion;
     
     public int[] resistanceUpgradeValues = { 30, 45, 60, 90, 135 };
     public int[] pickaxeUpgradeValues = { 1, 1, 1 };
@@ -17,6 +18,10 @@ public class LobbyManager : MonoBehaviour
     public int[] resistanceAndSpeedCosts = { 30, 75, 160, 350, 750 };
     public int[] pickaxeCosts = { 50, 150, 450 };
 
+    
+    // ---- THIS THING IS MISSING THE SHOPKEEPER'S DIALOG, AND IT'S SYSTEM, IDEALLY IN A SEPARATE SCRIPT ---- //
+    
+    
     private void Start()
     {
         nextDayButton.onClick.AddListener(OnNextDayClicked);
@@ -24,6 +29,7 @@ public class LobbyManager : MonoBehaviour
         foreach (var btn in resistanceUpgrades) btn.onClick.AddListener(UpgradeResistance);
         foreach (var btn in pickaxeUpgrades) btn.onClick.AddListener(UpgradePickaxe);
         foreach (var btn in speedUpgrades) btn.onClick.AddListener(UpgradeSpeed);
+        //Need to add in Listeners to special upgrades and also write their functions
         
         // Helper function because why run it on update?
         RefreshUI();
