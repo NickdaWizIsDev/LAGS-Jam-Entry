@@ -3,11 +3,12 @@ using System.Collections;
 using NUnit.Framework;
 using UnityEngine;
 using Random = UnityEngine.Random;
+using Managers;
 
 public class CaveDataGenerator : MonoBehaviour
 {
     // The types of blocks in our game
-    public enum BlockType { Air, Rock, Dirt, Ore, Slate, Door, Ladder }
+    public enum BlockType { Air, Rock, Dirt, Ore, Slate, Door, Ladder, Mushroom, SmallRock }
 
     [Header("Generation Settings")]
     public int baseSize = 50;               // Grid size
@@ -26,6 +27,8 @@ public class CaveDataGenerator : MonoBehaviour
     public GameObject ladderPrefab;
     public GameObject exitLadderPrefab; // was doorPrefab
     public GameObject elevatorPrefab;
+    public GameObject[] mushroomPrefab;
+    public GameObject[] smallRockPrefab;
 
     [Header("Organization")]
     public Transform environmentContainer; 
@@ -40,9 +43,14 @@ public class CaveDataGenerator : MonoBehaviour
 
     public IEnumerator GenerateLevelAsync(int currentDay, Action<Vector3> onComplete, Action<float> onProgress)
     {   
+        if (currentDay >= 15)
+        {
+            Debug.Log("Hey, you've reached day 15. As per your contract, now you get 10 days off with your family. We'll be expecting you back by day 11!");
+            yield break; 
+        }
+
         // Exponential scaling: baseSize + ( (Day - 1)^2 * multiplier )
         // Day 1 = baseSize. Day 2 = baseSize + 1^2 * multiplier. Day 3 = baseSize + 2^2 * multiplier, etc.
-        
         size = baseSize + Mathf.RoundToInt(Mathf.Pow(GameManager.Instance.CurrentDay - 1, 2) * growthMultiplier);
 
         // Adds 1 new floor every 3 days.
@@ -79,6 +87,8 @@ public class CaveDataGenerator : MonoBehaviour
         // 4. Smooth Cellular Automata (Create biomes)
         GenerateDirtBlobs();
 
+        SpawnDecorations();
+
         // 5. Spawn Ores based on the new moving centers
         SpawnOres(currentDay);
 
@@ -109,9 +119,9 @@ public class CaveDataGenerator : MonoBehaviour
 
         for (int i = 0; i < iterations; i++)
         {
-            if (IsInBounds(pos.x, pos.y, pos.z)) grid[pos.x, pos.y, pos.z] = BlockType.Air;
-            if (IsInBounds(pos.x, pos.y - 1, pos.z)) grid[pos.x, pos.y - 1, pos.z] = BlockType.Air;
-            if (IsInBounds(pos.x, pos.y - 2, pos.z)) grid[pos.x, pos.y - 2, pos.z] = BlockType.Air;
+            if (IsInBounds(pos.x, pos.y, pos.z) && grid[pos.x, pos.y, pos.z] != BlockType.Ladder) grid[pos.x, pos.y, pos.z] = BlockType.Air;
+            if (IsInBounds(pos.x, pos.y - 1, pos.z) && grid[pos.x, pos.y - 1, pos.z] != BlockType.Ladder) grid[pos.x, pos.y - 1, pos.z] = BlockType.Air;
+            if (IsInBounds(pos.x, pos.y - 2, pos.z) && grid[pos.x, pos.y - 2, pos.z] != BlockType.Ladder) grid[pos.x, pos.y - 2, pos.z] = BlockType.Air;
 
             pos += directions[Random.Range(0, directions.Length)];
             pos.x = Mathf.Clamp(pos.x, 2, size - 3);
@@ -136,22 +146,47 @@ public class CaveDataGenerator : MonoBehaviour
             current.y -= 1; 
             if (IsInBounds(current.x, current.y, current.z))
             {
-                // ONLY place the ladder prefab at the very bottom of the drop!
-                if (i == dropDistance - 1)
-                {
-                    grid[current.x, current.y, current.z] = BlockType.Ladder;
-                }
-                else
-                {
-                    grid[current.x, current.y, current.z] = BlockType.Air; 
-                }
+                grid[current.x, current.y, current.z] = BlockType.Air; 
                 
                 // Always widen the shaft by 1 block (+X) so the player has space to climb it
                 if (IsInBounds(current.x + 1, current.y, current.z)) 
                     grid[current.x + 1, current.y, current.z] = BlockType.Air;
             }
         }
+        
+        if (IsInBounds(current.x, current.y - 2, current.z))
+        {
+            grid[current.x, current.y - 2, current.z] = BlockType.Ladder;
+        }
+
         return current; 
+    }
+
+    private void SpawnDecorations()
+    {
+        int totalHeight = grid.GetLength(1);
+        for (int x = 1; x < size - 1; x++)
+        {
+            for (int y = 1; y < totalHeight - 1; y++)
+            {
+                for (int z = 1; z < size - 1; z++)
+                {
+                    if (grid[x, y, z] == BlockType.Air && 
+                       (grid[x, y - 1, z] == BlockType.Rock || grid[x, y - 1, z] == BlockType.Dirt))
+                    {
+                        float rand = Random.value;
+                        if (rand < 0.04f) 
+                        {
+                            grid[x, y, z] = BlockType.Mushroom;
+                        }
+                        else if (rand < 0.10f) 
+                        {
+                            grid[x, y, z] = BlockType.SmallRock;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private void SpawnOres(int currentDay)
@@ -196,7 +231,9 @@ public class CaveDataGenerator : MonoBehaviour
                 for (int z = 0; z < size; z++)
                 {
                     // Protect these blocks from being overwritten
-                    if (grid[x, y, z] == BlockType.Air || grid[x, y, z] == BlockType.Door || grid[x, y, z] == BlockType.Ladder) continue;
+                    if (grid[x, y, z] == BlockType.Air || grid[x, y, z] == BlockType.Door || 
+                        grid[x, y, z] == BlockType.Ladder || grid[x, y, z] == BlockType.Mushroom || 
+                        grid[x, y, z] == BlockType.SmallRock) continue;
 
                     bool isNearAirHorizontal = false;
                     bool isFloorOrCeiling = false;
@@ -206,7 +243,10 @@ public class CaveDataGenerator : MonoBehaviour
                     {
                         for (int dz = -2; dz <= 2; dz++)
                         {
-                            if (IsInBounds(x + dx, y, z + dz) && grid[x + dx, y, z + dz] == BlockType.Air)
+                            if (IsInBounds(x + dx, y, z + dz) && 
+                               (grid[x + dx, y, z + dz] == BlockType.Air || 
+                                grid[x + dx, y, z + dz] == BlockType.Mushroom || 
+                                grid[x + dx, y, z + dz] == BlockType.SmallRock))
                             {
                                 isNearAirHorizontal = true; 
                                 break;
@@ -216,8 +256,8 @@ public class CaveDataGenerator : MonoBehaviour
                     }
 
                     // Check if it is strictly a floor or ceiling (1 block up or down from Air)
-                    if (IsInBounds(x, y + 1, z) && grid[x, y + 1, z] == BlockType.Air) isFloorOrCeiling = true;
-                    if (IsInBounds(x, y - 1, z) && grid[x, y - 1, z] == BlockType.Air) isFloorOrCeiling = true;
+                    if (IsInBounds(x, y + 1, z) && (grid[x, y + 1, z] == BlockType.Air || grid[x, y + 1, z] == BlockType.Mushroom || grid[x, y + 1, z] == BlockType.SmallRock)) isFloorOrCeiling = true;
+                    if (IsInBounds(x, y - 1, z) && (grid[x, y - 1, z] == BlockType.Air || grid[x, y - 1, z] == BlockType.Mushroom || grid[x, y - 1, z] == BlockType.SmallRock)) isFloorOrCeiling = true;
 
                     // Apply the Slate limits
                     if (!isNearAirHorizontal || isFloorOrCeiling) 
@@ -268,6 +308,8 @@ public class CaveDataGenerator : MonoBehaviour
                         case BlockType.Dirt: prefabToSpawn = dirtPrefab; break;
                         case BlockType.Slate: prefabToSpawn = stygianSlatePrefab; break;
                         case BlockType.Ladder: prefabToSpawn = ladderPrefab; break;
+                        case BlockType.Mushroom: prefabToSpawn = mushroomPrefab[Random.Range(0, mushroomPrefab.Length-1)]; break;
+                        case BlockType.SmallRock: prefabToSpawn = smallRockPrefab[Random.Range(0, smallRockPrefab.Length-1)]; break;
                         case BlockType.Door:
                             if (GameManager.Instance.unlockedUpgrades.resistanceUpgrades[3])
                             {
@@ -279,8 +321,29 @@ public class CaveDataGenerator : MonoBehaviour
                             }
                             break;
                         case BlockType.Ore:
-                            if (mineralPrefabs.Length > 0) // Change this to be weighted for more basic ores
-                                prefabToSpawn = mineralPrefabs[Random.Range(0, mineralPrefabs.Length)];
+                            if (mineralPrefabs.Length > 0) 
+                            {
+                                int floorIndex = (totalHeight - 1 - y) / floorHeight;
+                                int currentDay = GameManager.Instance.CurrentDay;
+
+                                float gemChance = 0.01f + (floorIndex * 0.015f) + (currentDay * 0.002f);
+                                float preciousChance = 0.05f + (floorIndex * 0.025f) + (currentDay * 0.005f);
+
+                                float rand = Random.value;
+
+                                if (rand < gemChance)
+                                {
+                                    prefabToSpawn = mineralPrefabs[Mathf.Min(4, mineralPrefabs.Length - 1)];
+                                }
+                                else if (rand < gemChance + preciousChance)
+                                {
+                                    prefabToSpawn = mineralPrefabs[Random.Range(Mathf.Min(2, mineralPrefabs.Length - 1), Mathf.Min(4, mineralPrefabs.Length))];
+                                }
+                                else
+                                {
+                                    prefabToSpawn = mineralPrefabs[Random.Range(0, Mathf.Min(2, mineralPrefabs.Length))];
+                                }
+                            }
                             break;
                     }
 
@@ -290,18 +353,23 @@ public class CaveDataGenerator : MonoBehaviour
 
                         if (currentType == BlockType.Door)
                         {
-                            if (!IsInBounds(x, y, z - 1) || grid[x, y, z - 1] != BlockType.Air) spawnRotation = Quaternion.Euler(0, 0, 0); 
-                            else if (!IsInBounds(x, y, z + 1) || grid[x, y, z + 1] != BlockType.Air) spawnRotation = Quaternion.Euler(0, 180, 0); 
-                            else if (!IsInBounds(x - 1, y, z) || grid[x - 1, y, z] != BlockType.Air) spawnRotation = Quaternion.Euler(0, 90, 0); 
-                            else if (!IsInBounds(x + 1, y, z) || grid[x + 1, y, z] != BlockType.Air) spawnRotation = Quaternion.Euler(0, -90, 0); 
+                            // Check 3 blocks out to see which way the 5x5 room connects to the rest of the cave
+                            if (IsInBounds(x, y, z + 3) && grid[x, y, z + 3] == BlockType.Air) spawnRotation = Quaternion.Euler(0, 0, 0); 
+                            else if (IsInBounds(x, y, z - 3) && grid[x, y, z - 3] == BlockType.Air) spawnRotation = Quaternion.Euler(0, 180, 0); 
+                            else if (IsInBounds(x + 3, y, z) && grid[x + 3, y, z] == BlockType.Air) spawnRotation = Quaternion.Euler(0, 90, 0); 
+                            else if (IsInBounds(x - 3, y, z) && grid[x - 3, y, z] == BlockType.Air) spawnRotation = Quaternion.Euler(0, -90, 0); 
                         }
                         else if (currentType == BlockType.Ladder)
                         {
                             // Rotates the ladder to face the air shaft we carved
                             spawnRotation = Quaternion.Euler(0, 90, 0); 
                         }
+                        else if (currentType is BlockType.Mushroom or BlockType.SmallRock)
+                        {
+                            spawnRotation = Quaternion.Euler(0, Random.Range(0f, 360f), 0);
+                        }
 
-                        Instantiate(prefabToSpawn, new Vector3(x, y, z), spawnRotation, environmentContainer);
+                        Instantiate(prefabToSpawn, new Vector3(x, currentType == BlockType.Mushroom || currentType == BlockType.SmallRock? y-0.5f: y, z), spawnRotation, environmentContainer);
                         
                         blocksSpawnedThisFrame++;
 
@@ -320,6 +388,7 @@ public class CaveDataGenerator : MonoBehaviour
         onProgress?.Invoke(1f); 
     }
 
+    // Create a space to spawn in the shaft that holds both the entrance and exit of the mines
     private Vector3 CreateEntrance()
     {
         int totalHeight = grid.GetLength(1);
@@ -333,7 +402,7 @@ public class CaveDataGenerator : MonoBehaviour
         // Clear a massive 5x5 room for the elevator model
         for (int x = startX - 2; x <= startX + 2; x++)
         {
-            for (int y = floorY; y <= floorY + 4; y++) 
+            for (int y = floorY; y < totalHeight; y++) 
             {
                 for (int z = startZ - 2; z <= startZ + 2; z++)
                 {
@@ -347,7 +416,7 @@ public class CaveDataGenerator : MonoBehaviour
             grid[startX, floorY, startZ] = BlockType.Door;
         }
 
-        return new Vector3(startX, floorY + 1f, startZ+1.5f);
+        return new Vector3(startX, floorY + 1f, startZ);
     }
 
     // --- Helper Functions ---

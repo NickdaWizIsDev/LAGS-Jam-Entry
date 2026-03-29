@@ -2,6 +2,8 @@ using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Random = UnityEngine.Random;
+using Managers;
 
 namespace Player
 {
@@ -16,6 +18,7 @@ namespace Player
         public InputActionReference interactAction;
         private bool isHoldingBreak;
         internal PlayerController controller;
+        public Animator anim;
 
         #region Action setup
         private void OnEnable()
@@ -64,6 +67,8 @@ namespace Player
                 currentTarget = null; 
                 UIManager.Instance.interactionHUD.text = ""; 
             }
+            
+            anim.SetBool("Mining", isHoldingBreak);
         }
 
         private void OnBreak(InputAction.CallbackContext context)
@@ -81,6 +86,8 @@ namespace Player
                 {
                     case InputActionPhase.Started:
                         currentTarget.Interact();
+                        int randomSwing = Random.Range(0, 2); // Picks 0 or 1
+                        anim.SetInteger("SwingType", randomSwing);
                         break;
                     case InputActionPhase.Canceled:
                         currentTarget.OnRelease();

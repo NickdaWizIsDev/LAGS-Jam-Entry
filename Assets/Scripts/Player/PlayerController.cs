@@ -1,5 +1,6 @@
 using System;
 using Gameplay;
+using Managers;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -10,9 +11,11 @@ namespace Player
         [Header("References")]
         [SerializeField] private Rigidbody body;
         [SerializeField] private PlayerInteractions interactions;
+        [SerializeField] private Animator anim;
         [SerializeField] private Transform playerHead;
         [SerializeField] private GameObject basicPickaxe;
         [SerializeField] private GameObject betterPickaxe;
+        [SerializeField] private Light headLight;
         public PlayerInventory Inventory;
         
         [Header("Actions")]
@@ -30,12 +33,13 @@ namespace Player
         [SerializeField] public float maxResistance = 100f;
         public float currentResistance;
         [SerializeField] public int pickaxePower = 1;
+        [SerializeField] public float baseLightPower = 1.5f;
+        [SerializeField] public float baseLightRange = 6f;
         
         [Header("Ladder Settings")]
         public float climbSpeed = 5f;
-        private bool isClimbing;
-
-        private Transform cam;
+        public bool isClimbing;
+        private bool canClimb;
 
         #region Action setup
         void OnEnable()
@@ -64,7 +68,19 @@ namespace Player
             pickaxePower = GameManager.Instance.playerPickaxeQuality;
             moveSpeed = GameManager.Instance.playerMovementSpeed;
             
-            cam = Camera.main?.transform;
+            betterPickaxe.SetActive(GameManager.Instance.unlockedUpgrades.betterPickaxeUpgrade);
+
+            if (GameManager.Instance.unlockedUpgrades.helmetUpgrade)
+            {
+                headLight.intensity = 4f;
+                headLight.range = 15f;
+            }
+            else
+            {
+                headLight.intensity = baseLightPower;
+                headLight.range = baseLightRange;
+            }
+            
         }
         private void Update()
         {
@@ -82,11 +98,12 @@ namespace Player
         }
         private void FixedUpdate()
         {
-            if (isClimbing)
+            if (isClimbing && canClimb)
             {
                 // Turn off gravity and map the W/S keys to purely vertical movement
                 body.useGravity = false;
-                body.linearVelocity = new Vector3(0f, movementInput.y * climbSpeed, 0f);
+                Vector3 moveDirection = transform.forward * movementInput.y + transform.right * movementInput.x;
+                body.linearVelocity = new Vector3(moveDirection.x * moveSpeed, movementInput.y * climbSpeed, moveDirection.z * moveSpeed);
             }
             else
             {
@@ -94,6 +111,7 @@ namespace Player
                 body.useGravity = true;
                 Vector3 moveDirection = transform.forward * movementInput.y + transform.right * movementInput.x;
                 body.linearVelocity = new Vector3(moveDirection.x * moveSpeed, body.linearVelocity.y, moveDirection.z * moveSpeed);
+                anim.SetBool("isMoving", body.linearVelocity.magnitude > 1 );
             }
         }
         private void LateUpdate()
@@ -105,12 +123,16 @@ namespace Player
         
         private void OnTriggerEnter(Collider other)
         {
-            if (other.TryGetComponent<Ladder>(out var ladder)) isClimbing = true;
+            if (other.TryGetComponent<Ladder>(out var ladder)) canClimb = true;
         }
 
         private void OnTriggerExit(Collider other)
         {
-            if (other.TryGetComponent<Ladder>(out var ladder)) isClimbing = false;
+            if (other.TryGetComponent<Ladder>(out var ladder)) 
+            {
+                canClimb = false;
+                isClimbing = false;
+            }
         }
 
         #region  Input Handling
@@ -128,8 +150,8 @@ namespace Player
         private void HandleCameraPitch()
         {
             xRotation -= lookInput.y * sensitivity;
-            xRotation = Mathf.Clamp(xRotation, -80f, 80f);
-            cam.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+            xRotation = Mathf.Clamp(xRotation, 0f, 140f);
+            playerHead.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
         }
         public void SetEntrancePosition(Vector3 playerPos)
         {
