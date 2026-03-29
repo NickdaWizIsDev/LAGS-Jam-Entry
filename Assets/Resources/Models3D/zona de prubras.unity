@@ -425,6 +425,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -893114008919724030, guid: c29a4370ae748c84e92dbd4faf89753b, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -686869799201631332, guid: c29a4370ae748c84e92dbd4faf89753b, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 792213802187326409, guid: c29a4370ae748c84e92dbd4faf89753b, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0.371
@@ -433,6 +441,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Minero
       objectReference: {fileID: 0}
+    - target: {fileID: 1496583018059008949, guid: c29a4370ae748c84e92dbd4faf89753b, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3806873833841277308, guid: c29a4370ae748c84e92dbd4faf89753b, type: 3}
       propertyPath: m_LocalPosition.y
       value: -0.107
@@ -440,6 +452,14 @@ PrefabInstance:
     - target: {fileID: 3806873833841277308, guid: c29a4370ae748c84e92dbd4faf89753b, type: 3}
       propertyPath: m_LocalPosition.z
       value: 0.648
+      objectReference: {fileID: 0}
+    - target: {fileID: 7597318177860503538, guid: c29a4370ae748c84e92dbd4faf89753b, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.708
+      objectReference: {fileID: 0}
+    - target: {fileID: 7597318177860503538, guid: c29a4370ae748c84e92dbd4faf89753b, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.327
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
