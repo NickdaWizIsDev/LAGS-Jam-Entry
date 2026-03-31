@@ -13,9 +13,6 @@ public class MainMenuManager : MonoBehaviour
     public Button playButton;
     public Button quitButton;
 
-    [Header("Scene Settings")]
-    public string lobbySceneName = "LobbyScene"; 
-
     private void Start()
     {
         // Hook up the buttons
@@ -60,7 +57,7 @@ public class MainMenuManager : MonoBehaviour
     {
         // Disable the button to prevent double-clicking while the scene loads
         playButton.interactable = false;
-        SceneManager.LoadScene(lobbySceneName);
+        SceneManager.LoadScene("Mines");
     }
 
     public void QuitGame()

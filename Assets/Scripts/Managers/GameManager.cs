@@ -155,7 +155,7 @@ namespace Managers
             }
 
             SceneManager.LoadScene("Lobby");
-            int playerCut = Mathf.RoundToInt(Player.Inventory.money * 0.30f);
+            int playerCut = Mathf.RoundToInt(Player.Inventory.money * (unlockedUpgrades.promotion ? 0.5f : 0.3f));
             Player.Inventory.money = 0;
             playerBank += playerCut;
             CurrentDay++;
@@ -210,6 +210,8 @@ namespace Managers
             if (UIManager.Instance.gameOverScreenOn) return;
             IsGamePaused = !IsGamePaused;
             Time.timeScale = IsGamePaused ? 0f : 1f;
+
+            AudioManager.Instance.ChangeMusicVolume(IsGamePaused ? 0.5f : 1f);
 
             UIManager.Instance.pauseUI.gameObject.SetActive(Instance.IsGamePaused);
 

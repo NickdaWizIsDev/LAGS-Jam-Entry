@@ -65,7 +65,7 @@ namespace Player
             {
                 currentTarget.AbortHover();
                 currentTarget = null; 
-                UIManager.Instance.interactionHUD.text = ""; 
+                UIManager.Instance.interactionHUD.text = "";
             }
             
             anim.SetBool("Mining", isHoldingBreak);

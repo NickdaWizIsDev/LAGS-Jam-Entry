@@ -1,2 +1,13 @@
 fileFormatVersion: 2
 guid: f132577b6306b9c4bbc8593038f30710
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - blockData: {instanceID: 0}
+  - breakClip: {fileID: 8300000, guid: 0e140ead1be3d784b9a31ae5d65e1902, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

@@ -14,8 +14,11 @@ namespace Player
         [SerializeField] private Animator anim;
         [SerializeField] private Transform playerHead;
         [SerializeField] private GameObject basicPickaxe;
+        [SerializeField] private MeshRenderer basicPickaxeRenderer;
         [SerializeField] private GameObject betterPickaxe;
+        [SerializeField] private MeshRenderer betterPickaxeRenderer;
         [SerializeField] private Light headLight;
+        [SerializeField] private AnimationClip[] pickaxeSwings;
         public PlayerInventory Inventory;
         
         [Header("Actions")]
@@ -67,9 +70,35 @@ namespace Player
             
             pickaxePower = GameManager.Instance.playerPickaxeQuality;
             moveSpeed = GameManager.Instance.playerMovementSpeed;
-            
-            betterPickaxe.SetActive(GameManager.Instance.unlockedUpgrades.betterPickaxeUpgrade);
 
+            var mat = Resources.Load<Material>("Materials/Pebbles");
+            switch (pickaxePower)
+            {
+                case 1:
+                    mat = Resources.Load<Material>("Materials/Pebbles");
+                    break;
+                case 2:
+                    mat = Resources.Load<Material>("Materials/Mineral 1");
+                    break;
+                case 3:
+                    mat = Resources.Load<Material>("Materials/Mineral 3");
+                    break;
+                case 4:
+                    mat = Resources.Load<Material>("Materials/Mineral 4");
+                    break;
+            }
+            if (GameManager.Instance.unlockedUpgrades.betterPickaxeUpgrade)
+            {
+                basicPickaxe.SetActive(false);
+                betterPickaxe.SetActive(true);
+                betterPickaxeRenderer.materials[1] = mat;
+            }
+            else
+            {
+                betterPickaxe.SetActive(false);
+                basicPickaxe.SetActive(true);
+                basicPickaxeRenderer.materials[1] = mat;
+            }
             if (GameManager.Instance.unlockedUpgrades.helmetUpgrade)
             {
                 headLight.intensity = 4f;
@@ -80,7 +109,11 @@ namespace Player
                 headLight.intensity = baseLightPower;
                 headLight.range = baseLightRange;
             }
-            
+
+            for (int i = 0; i < pickaxeSwings.Length; i++)
+            {
+                anim.SetFloat("pickaxeSpeed", 1 + 0.7f * pickaxePower - 1);
+            }
         }
         private void Update()
         {

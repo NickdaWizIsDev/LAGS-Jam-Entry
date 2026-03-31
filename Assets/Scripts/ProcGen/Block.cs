@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 using Managers;
+using UnityEngine.Audio;
 
 public class Block : Interactable
 {
@@ -11,6 +12,7 @@ public class Block : Interactable
     {
         canInteract = true;
     }
+
     public override string OnHover()
     {
         if(blockData.blockType == BlockData.BlockType.Slate)
@@ -62,7 +64,8 @@ public class Block : Interactable
         yield return new WaitForSeconds(actualTimeToBreak);
         Debug.Log("Block broken!");
         Destroy(gameObject);
-        GameManager.Instance.Player.AddMoney(blockData.coinValue);
+        AudioManager.Instance.PlayBreakSFX();
+        GameManager.Instance.Player.AddMoney(GameManager.Instance.unlockedUpgrades.doubleValueUpgrade? 2 * blockData.coinValue : blockData.coinValue);
         breaking = false;
     }
 }
