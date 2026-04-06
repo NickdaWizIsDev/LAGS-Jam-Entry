@@ -87,7 +87,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2215185479849609706, guid: cf3be0cd18f88ea4bb43accc2f6d6e2b, type: 3}
       propertyPath: m_Layer
-      value: 6
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -191,6 +191,14 @@ PrefabInstance:
     - target: {fileID: 6744384111663428468, guid: 2358dbbb9ea6fe24d9e54abc42b953f3, type: 3}
       propertyPath: m_Name
       value: Acensor
+      objectReference: {fileID: 0}
+    - target: {fileID: 6744384111663428468, guid: 2358dbbb9ea6fe24d9e54abc42b953f3, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 8524224446150167068, guid: 2358dbbb9ea6fe24d9e54abc42b953f3, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

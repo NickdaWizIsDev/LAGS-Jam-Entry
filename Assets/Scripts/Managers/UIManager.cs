@@ -84,6 +84,7 @@ namespace Managers
             }
             else
             {
+                betterPickaxe.enabled = false;
                 switch (GameManager.Instance.Player.pickaxePower)
                 {
                     case 1:
